@@ -100,7 +100,7 @@ class AuthsignController extends Controller
     {
         $user = Authsign::find(session('authsign_id'));
 
-        // 🔥 Prevent dashboard access without signature
+       
         if (!$user->signature) {
             return redirect()->route('signature.form');
         }
@@ -111,10 +111,12 @@ class AuthsignController extends Controller
     // -------------------
     // SIGNATURE PAGE
     // -------------------
-    public function signatureForm()
-    {
-        return view('authsign.signature');
-    }
+   public function signatureForm()
+{
+    $user = Authsign::find(session('authsign_id'));
+    return view('authsign.signature', compact('user'));
+}
+
 
     // -------------------
     // SAVE SIGNATURE
