@@ -608,7 +608,8 @@ http://127.0.0.1:8000/login
 http://127.0.0.1:8000/dashboard
 ```
 
-<img width="1598" height="403" alt="image" src="https://github.com/user-attachments/assets/6aff482a-d323-4792-b447-714f91bc2d88" />
+<img width="1592" height="501" alt="image" src="https://github.com/user-attachments/assets/349f5bb2-2852-40ff-8d65-94b6265251df" />
+
 
 
 <img width="1547" height="383" alt="image" src="https://github.com/user-attachments/assets/68dfb510-36f5-4e5c-ad10-a2731a469ec2" />
