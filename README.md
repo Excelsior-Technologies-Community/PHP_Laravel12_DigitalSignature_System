@@ -597,7 +597,10 @@ http://127.0.0.1:8000/register
 ```
  <img width="1634" height="620" alt="image" src="https://github.com/user-attachments/assets/200025c4-67fd-4c5d-9a0b-aa80fdb94fc2" />
 <img width="1647" height="579" alt="image" src="https://github.com/user-attachments/assets/4a4aa6e2-290c-4d61-842a-9c21790b5b65" />
+<img width="1633" height="690" alt="image" src="https://github.com/user-attachments/assets/b273e2b2-3ab9-4eab-8c95-e44225825548" />
 <img width="1598" height="403" alt="image" src="https://github.com/user-attachments/assets/6aff482a-d323-4792-b447-714f91bc2d88" />
+
+
 <img width="1547" height="383" alt="image" src="https://github.com/user-attachments/assets/68dfb510-36f5-4e5c-ad10-a2731a469ec2" />
 
  
