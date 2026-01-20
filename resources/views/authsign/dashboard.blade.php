@@ -5,13 +5,19 @@
 @section('content')
 <div class="card auth-card p-4">
 
-    <h4>Dashboard</h4>
+    <h4 class="mb-3">Dashboard</h4>
 
-    <p class="text-muted mb-2">
-        Your digital signature is saved successfully.
-    </p>
+    <p class="text-muted">Your current digital signature:</p>
 
-    <img src="{{ asset('signatures/'.$user->signature) }}" width="250">
+    <img src="{{ asset('signatures/'.$user->signature) }}"
+         class="mb-3"
+         style="max-width:300px; border:1px solid #ccc; padding:10px; background:#fff;">
+
+    <br>
+
+    <a href="{{ route('signature.form') }}" class="btn btn-warning">
+        Update Signature
+    </a>
 
 </div>
 @endsection
