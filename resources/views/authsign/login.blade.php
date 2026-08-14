@@ -34,6 +34,13 @@
 
                 <input type="password" class="form-control mb-3" name="password" placeholder="Password">
 
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="remember" id="remember">
+                    <label class="form-check-label" for="remember">
+                        Remember Me
+                    </label>
+                </div>
+
                 <button class="btn btn-success w-100">
                     Login
                 </button>

@@ -56,6 +56,7 @@
                 <span class="fw-semibold">
                     Hi, {{ session('authsign_name') }}
                 </span>
+                <a href="{{ route('profile.edit') }}" class="btn btn-sm btn-outline-primary">Profile</a>
                 <a href="{{ route('logout') }}" class="btn btn-sm btn-outline-danger">
                     Logout
                 </a>
