@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
        
         $middleware->alias([
             'authsign' => \App\Http\Middleware\AuthsignMiddleware::class,
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
 
     })
