@@ -46,6 +46,11 @@ Route::middleware('authsign')->group(function () {
     Route::delete('my-signatures/{id}', [SignatureController::class, 'destroy'])->name('signatures.destroy');
 });
 
+// Public Document Verification
+Route::get('verify-document', [DocumentController::class, 'verificationForm'])->name('documents.verify.form');
+
+Route::post('verify-document', [DocumentController::class, 'verifyByCode'])->name('documents.verify.code');
+
 // Documents
 Route::middleware('authsign')->group(function () {
     Route::get('my-documents', [DocumentController::class, 'index'])->name('documents.index');
