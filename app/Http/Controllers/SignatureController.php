@@ -10,97 +10,355 @@ use Illuminate\Support\Facades\File;
 
 class SignatureController extends Controller
 {
+    /*
+    |--------------------------------------------------------------------------
+    | Show Signature Drawing Page
+    |--------------------------------------------------------------------------
+    */
+
     public function index()
     {
         $user = Authsign::find(session('authsign_id'));
+
+        if (!$user) {
+            return redirect()->route('login.form')
+                ->with('error', 'Please login first.');
+        }
+
         return view('authsign.signature', compact('user'));
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Save New Signature
+    |--------------------------------------------------------------------------
+    */
+
     public function store(Request $request)
     {
-        if (!$request->signature) {
-            return back()->with('error', 'Signature not found!');
+        $user = Authsign::find(session('authsign_id'));
+
+        if (!$user) {
+            return redirect()->route('login.form')
+                ->with('error', 'Please login first.');
         }
+
+        if (!$request->signature) {
+            return back()->with('error', 'Please draw your signature first.');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Base64 Signature
+        |--------------------------------------------------------------------------
+        */
 
         $imageData = $request->signature;
-        $imageData = str_replace('data:image/png;base64,', '', $imageData);
-        $imageData = str_replace(' ', '+', $imageData);
-        $imageName = time() . '.png';
-        $directory = public_path('signatures');
 
-        if (!file_exists($directory)) {
-            mkdir($directory, 0777, true);
+        if (!str_starts_with($imageData, 'data:image/png;base64,')) {
+            return back()->with('error', 'Invalid signature format.');
         }
 
-        $filePath = $directory . DIRECTORY_SEPARATOR . $imageName;
-        file_put_contents($filePath, base64_decode($imageData));
+        /*
+        |--------------------------------------------------------------------------
+        | Remove Base64 Prefix
+        |--------------------------------------------------------------------------
+        */
 
-        $user = Authsign::find(session('authsign_id'));
-        $signature = Signature::create([
+        $imageData = str_replace(
+            'data:image/png;base64,',
+            '',
+            $imageData
+        );
+
+        $imageData = str_replace(' ', '+', $imageData);
+
+        $decodedImage = base64_decode($imageData, true);
+
+        if ($decodedImage === false) {
+            return back()->with('error', 'Invalid signature data.');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create Signature Directory
+        |--------------------------------------------------------------------------
+        */
+
+        $directory = public_path('signatures');
+
+        if (!File::exists($directory)) {
+            File::makeDirectory(
+                $directory,
+                0777,
+                true,
+                true
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Generate Unique Filename
+        |--------------------------------------------------------------------------
+        */
+
+        $imageName = uniqid('signature_', true) . '.png';
+
+        $filePath = $directory . DIRECTORY_SEPARATOR . $imageName;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Save Image
+        |--------------------------------------------------------------------------
+        */
+
+        file_put_contents(
+            $filePath,
+            $decodedImage
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Save Signature History
+        |--------------------------------------------------------------------------
+        */
+
+        Signature::create([
             'authsign_id' => $user->id,
-            'image_name'  => $imageName,
+            'image_name' => $imageName,
         ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | IMPORTANT
+        | Update Current Signature
+        |--------------------------------------------------------------------------
+        */
+
+        /*
+         * Delete the previous current signature file
+         * only if it is different from the new one.
+         */
+
+        if (
+            $user->signature &&
+            $user->signature !== $imageName
+        ) {
+            $oldSignaturePath = public_path(
+                'signatures/' . $user->signature
+            );
+
+            if (File::exists($oldSignaturePath)) {
+                File::delete($oldSignaturePath);
+            }
+        }
+
+        /*
+         * Store new signature filename
+         * in authsigns.signature
+         */
+
+        $user->signature = $imageName;
+        $user->save();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Activity Log
+        |--------------------------------------------------------------------------
+        */
 
         ActivityLog::create([
             'authsign_id' => $user->id,
-            'action'      => 'Signature saved',
-            'ip_address'  => $request->ip(),
-            'user_agent'  => $request->userAgent(),
-            'created_at'  => now(),
+            'action' => 'Signature saved',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'created_at' => now(),
         ]);
 
-        return redirect()->route('signatures.all')
-            ->with('success', 'Signature saved!');
+        /*
+        |--------------------------------------------------------------------------
+        | Redirect
+        |--------------------------------------------------------------------------
+        */
+
+        return redirect()
+            ->route('signatures.all')
+            ->with('success', 'Signature saved successfully!');
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Show All Signatures
+    |--------------------------------------------------------------------------
+    */
 
     public function all()
     {
         $user = Authsign::find(session('authsign_id'));
-        $signatures = $user->signatures()->latest()->get();
-        return view('authsign.signatures.index', compact('user', 'signatures'));
+
+        if (!$user) {
+            return redirect()->route('login.form')
+                ->with('error', 'Please login first.');
+        }
+
+        $signatures = $user
+            ->signatures()
+            ->latest()
+            ->get();
+
+        return view(
+            'authsign.signatures.index',
+            compact('user', 'signatures')
+        );
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Download Signature
+    |--------------------------------------------------------------------------
+    */
 
     public function download($id)
     {
-        $signature = Signature::findOrFail($id);
         $user = Authsign::find(session('authsign_id'));
 
-        if ($signature->authsign_id !== $user->id) {
-            return back()->with('error', 'Unauthorized');
+        if (!$user) {
+            return redirect()->route('login.form')
+                ->with('error', 'Please login first.');
         }
 
-        $filePath = public_path('signatures/' . $signature->image_name);
+        $signature = Signature::findOrFail($id);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Authorization
+        |--------------------------------------------------------------------------
+        */
+
+        if ((int) $signature->authsign_id !== (int) $user->id) {
+            return back()->with('error', 'Unauthorized.');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | File Path
+        |--------------------------------------------------------------------------
+        */
+
+        $filePath = public_path(
+            'signatures/' . $signature->image_name
+        );
+
         if (!File::exists($filePath)) {
-            return back()->with('error', 'File not found');
+            return back()->with('error', 'Signature file not found.');
         }
 
-        return response()->download($filePath, $signature->image_name);
+        return response()->download(
+            $filePath,
+            $signature->image_name
+        );
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Delete Signature
+    |--------------------------------------------------------------------------
+    */
 
     public function destroy($id)
     {
-        $signature = Signature::findOrFail($id);
         $user = Authsign::find(session('authsign_id'));
 
-        if ($signature->authsign_id !== $user->id) {
-            return back()->with('error', 'Unauthorized');
+        if (!$user) {
+            return redirect()->route('login.form')
+                ->with('error', 'Please login first.');
         }
 
-        $filePath = public_path('signatures/' . $signature->image_name);
+        $signature = Signature::findOrFail($id);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Authorization
+        |--------------------------------------------------------------------------
+        */
+
+        if ((int) $signature->authsign_id !== (int) $user->id) {
+            return back()->with('error', 'Unauthorized.');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Delete File
+        |--------------------------------------------------------------------------
+        */
+
+        $filePath = public_path(
+            'signatures/' . $signature->image_name
+        );
+
         if (File::exists($filePath)) {
             File::delete($filePath);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Check if this is the current signature
+        |--------------------------------------------------------------------------
+        */
+
+        if ($user->signature === $signature->image_name) {
+
+            /*
+             * Find another signature to use as current signature.
+             */
+
+            $latestSignature = Signature::where(
+                'authsign_id',
+                $user->id
+            )
+                ->where('id', '!=', $signature->id)
+                ->latest()
+                ->first();
+
+            if ($latestSignature) {
+                $user->signature = $latestSignature->image_name;
+            } else {
+                $user->signature = null;
+            }
+
+            $user->save();
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Delete Database Record
+        |--------------------------------------------------------------------------
+        */
+
         $signature->delete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Activity Log
+        |--------------------------------------------------------------------------
+        */
 
         ActivityLog::create([
             'authsign_id' => $user->id,
-            'action'      => 'Signature deleted',
-            'ip_address'  => request()->ip(),
-            'user_agent'  => request()->userAgent(),
-            'created_at'  => now(),
+            'action' => 'Signature deleted',
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'created_at' => now(),
         ]);
 
-        return back()->with('success', 'Signature deleted successfully');
+        return back()->with(
+            'success',
+            'Signature deleted successfully.'
+        );
     }
 }
+
