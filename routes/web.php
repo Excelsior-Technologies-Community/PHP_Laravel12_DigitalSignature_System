@@ -62,14 +62,54 @@ Route::middleware('authsign')->group(function () {
 });
 
 // Admin
-Route::middleware(['authsign', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-    Route::get('users', [AdminController::class, 'users'])->name('users');
-    Route::get('users/search', [AdminController::class, 'searchUsers'])->name('users.search');
-    Route::post('users/{id}/toggle-admin', [AdminController::class, 'toggleAdmin'])->name('users.toggleAdmin');
-    Route::get('documents', [AdminController::class, 'documents'])->name('documents');
-    Route::get('activity-logs', [AdminController::class, 'activityLogs'])->name('activity.logs');
-});
+// Admin
+Route::middleware(['authsign', 'admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+
+        // Dashboard
+        Route::get(
+            'dashboard',
+            [AdminController::class, 'dashboard']
+        )->name('dashboard');
+
+
+        // Users
+        Route::get(
+            'users',
+            [AdminController::class, 'users']
+        )->name('users');
+
+        Route::get(
+            'users/search',
+            [AdminController::class, 'searchUsers']
+        )->name('users.search');
+
+        Route::post(
+            'users/{id}/toggle-admin',
+            [AdminController::class, 'toggleAdmin']
+        )->name('users.toggleAdmin');
+
+        Route::delete(
+            'users/{id}',
+            [AdminController::class, 'deleteUser']
+        )->name('users.delete');
+
+
+        // Documents
+        Route::get(
+            'documents',
+            [AdminController::class, 'documents']
+        )->name('documents');
+
+
+        // Activity Logs
+        Route::get(
+            'activity-logs',
+            [AdminController::class, 'activityLogs']
+        )->name('activity.logs');
+    });
 
 // Logout
 Route::get('logout', [AuthsignController::class, 'logout'])->name('logout');
@@ -78,4 +118,3 @@ Route::get('logout', [AuthsignController::class, 'logout'])->name('logout');
 Route::get('/', function () {
     return view('welcome');
 });
-

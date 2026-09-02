@@ -13,8 +13,8 @@ class ActivityLog extends Model
         'created_at' => 'datetime',
     ];
 
-    public function user()
-    {
-        return $this->belongsTo(Authsign::class);
-    }
+   public function user()
+{
+    return $this->belongsTo(Authsign::class, 'authsign_id');
+}
 }
